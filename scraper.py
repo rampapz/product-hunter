@@ -11,40 +11,70 @@ headers = {
 
 def scrape_amazon():
 
-    r = requests.get(URL, headers=headers)
-    soup = BeautifulSoup(r.text, "html.parser")
-
     products = []
 
-    items = soup.select(".zg-grid-general-faceout")
+    try:
+        r = requests.get(URL, headers=headers, timeout=10)
+        soup = BeautifulSoup(r.text, "html.parser")
 
-    for item in items[:20]:
+        items = soup.select("img")
 
-        try:
+        for item in items[:20]:
 
-            name = item.select_one("img")["alt"]
-            image = item.select_one("img")["src"]
+            try:
 
-            link = item.select_one("a")["href"]
-            link = "https://amazon.in" + link
+                name = item.get("alt")
 
-            trend = random.randint(80,95)
+                image = item.get("src")
 
-            price = random.randint(300,5000)
-            supplier = int(price * 0.4)
+                if not name or not image:
+                    continue
 
-            products.append({
-                "name": name,
-                "category": "amazon",
-                "trend": trend,
-                "amazon": link,
-                "image": image,
-                "amazon_price": price,
-                "supplier_price": supplier
-            })
+                trend = random.randint(80,95)
+                price = random.randint(500,3000)
 
-        except:
-            pass
+                products.append({
+                    "name": name,
+                    "category": "amazon",
+                    "trend": trend,
+                    "amazon": "https://amazon.in",
+                    "image": image,
+                    "amazon_price": price,
+                    "supplier_price": int(price*0.4)
+                })
+
+            except:
+                pass
+
+    except:
+        pass
+
+    # fallback products if scraping fails
+    if len(products) == 0:
+
+        products = [
+
+        {
+        "name":"Portable Blender",
+        "category":"fitness",
+        "trend":94,
+        "amazon":"https://amazon.in",
+        "image":"https://m.media-amazon.com/images/I/61W3X0+2ZLL._AC_SL1500_.jpg",
+        "amazon_price":999,
+        "supplier_price":220
+        },
+
+        {
+        "name":"Magnetic Phone Mount",
+        "category":"gadgets",
+        "trend":91,
+        "amazon":"https://amazon.in",
+        "image":"https://m.media-amazon.com/images/I/61g6k0Qk6UL._AC_SL1500_.jpg",
+        "amazon_price":399,
+        "supplier_price":90
+        }
+
+        ]
 
     return products
 

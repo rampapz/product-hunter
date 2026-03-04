@@ -84,7 +84,7 @@ fetch("products.json")
 .then(products => {
 
 let html=""
-
+products.sort((a,b)=>b.trend-a.trend)
 products.forEach(p => {
 
 let margin = Math.round((p.amazon_price - p.supplier_price) / p.amazon_price * 100)

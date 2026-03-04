@@ -3,83 +3,77 @@ from bs4 import BeautifulSoup
 import json
 import random
 
-URL = "https://www.amazon.in/gp/new-releases"
+URLS = [
+"https://www.amazon.in/gp/bestsellers",
+"https://www.amazon.in/gp/new-releases"
+]
 
 headers = {
-    "User-Agent": "Mozilla/5.0"
+"User-Agent": "Mozilla/5.0"
 }
 
-def scrape_amazon():
+products = []
 
-    products = []
+def scrape_page(url):
+
+    r = requests.get(url,headers=headers,timeout=10)
+
+    soup = BeautifulSoup(r.text,"html.parser")
+
+    items = soup.select("img")
+
+    results=[]
+
+    for item in items:
+
+        name=item.get("alt")
+        image=item.get("src")
+
+        if not name or not image:
+            continue
+
+        trend=random.randint(70,100)
+
+        price=random.randint(500,4000)
+
+        results.append({
+        "name":name,
+        "category":"amazon",
+        "trend":trend,
+        "amazon":"https://amazon.in",
+        "image":image,
+        "amazon_price":price,
+        "supplier_price":int(price*0.4)
+        })
+
+    return results
+
+
+for url in URLS:
 
     try:
-        r = requests.get(URL, headers=headers, timeout=10)
-        soup = BeautifulSoup(r.text, "html.parser")
-
-        items = soup.select("img")
-
-        for item in items[:20]:
-
-            try:
-
-                name = item.get("alt")
-
-                image = item.get("src")
-
-                if not name or not image:
-                    continue
-
-                trend = random.randint(80,95)
-                price = random.randint(500,3000)
-
-                products.append({
-                    "name": name,
-                    "category": "amazon",
-                    "trend": trend,
-                    "amazon": "https://amazon.in",
-                    "image": image,
-                    "amazon_price": price,
-                    "supplier_price": int(price*0.4)
-                })
-
-            except:
-                pass
-
+        data=scrape_page(url)
+        products.extend(data)
     except:
         pass
 
-    # fallback products if scraping fails
-    if len(products) == 0:
 
-        products = [
+# remove duplicates
+seen=set()
+clean=[]
 
-        {
-        "name":"Portable Blender",
-        "category":"fitness",
-        "trend":94,
-        "amazon":"https://amazon.in",
-        "image":"https://m.media-amazon.com/images/I/61W3X0+2ZLL._AC_SL1500_.jpg",
-        "amazon_price":999,
-        "supplier_price":220
-        },
+for p in products:
 
-        {
-        "name":"Magnetic Phone Mount",
-        "category":"gadgets",
-        "trend":91,
-        "amazon":"https://amazon.in",
-        "image":"https://m.media-amazon.com/images/I/61g6k0Qk6UL._AC_SL1500_.jpg",
-        "amazon_price":399,
-        "supplier_price":90
-        }
+    if p["name"] in seen:
+        continue
 
-        ]
-
-    return products
+    seen.add(p["name"])
+    clean.append(p)
 
 
-data = scrape_amazon()
+# keep top 20 by trend
+clean=sorted(clean,key=lambda x:x["trend"],reverse=True)[:20]
+
 
 with open("products.json","w") as f:
-    json.dump(data,f,indent=2)
+    json.dump(clean,f,indent=2)

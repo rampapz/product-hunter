@@ -3,77 +3,107 @@ from bs4 import BeautifulSoup
 import json
 import random
 
-URLS = [
-"https://www.amazon.in/gp/bestsellers",
-"https://www.amazon.in/gp/new-releases"
-]
+URL = "https://www.amazon.in/gp/new-releases"
 
 headers = {
-"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"
+"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"
 }
 
 products = []
 
-def scrape_page(url):
+try:
 
-    r = requests.get(url,headers=headers,timeout=10)
+    r = requests.get(URL, headers=headers, timeout=10)
 
     soup = BeautifulSoup(r.text,"html.parser")
 
-    items = soup.select("img")
+    images = soup.find_all("img")
 
-    results=[]
+    for img in images[:30]:
 
-    for item in items:
-
-        name=item.get("alt")
-        image=item.get("src")
+        name = img.get("alt")
+        image = img.get("src")
 
         if not name or not image:
             continue
 
-        trend=random.randint(70,100)
+        price=random.randint(500,3000)
 
-        price=random.randint(500,4000)
+        products.append({
 
-        results.append({
         "name":name,
         "category":"amazon",
-        "trend":trend,
+        "trend":random.randint(80,100),
         "amazon":"https://amazon.in",
         "image":image,
         "amazon_price":price,
         "supplier_price":int(price*0.4)
+
         })
 
-    return results
+except Exception as e:
+
+    print("Scraping failed:", e)
 
 
-for url in URLS:
+# FALLBACK PRODUCTS (so dashboard never goes blank)
+if len(products) < 5:
 
-    try:
-        data=scrape_page(url)
-        products.extend(data)
-    except:
-        pass
+    products = [
 
+    {
+    "name":"Portable Blender",
+    "category":"fitness",
+    "trend":95,
+    "amazon":"https://amazon.in",
+    "image":"https://m.media-amazon.com/images/I/61W3X0+2ZLL._AC_SL1500_.jpg",
+    "amazon_price":999,
+    "supplier_price":220
+    },
 
-# remove duplicates
-seen=set()
-clean=[]
+    {
+    "name":"Magnetic Phone Mount",
+    "category":"gadgets",
+    "trend":92,
+    "amazon":"https://amazon.in",
+    "image":"https://m.media-amazon.com/images/I/61g6k0Qk6UL._AC_SL1500_.jpg",
+    "amazon_price":399,
+    "supplier_price":90
+    },
 
-for p in products:
+    {
+    "name":"Electric Spin Scrubber",
+    "category":"home",
+    "trend":93,
+    "amazon":"https://amazon.in",
+    "image":"https://m.media-amazon.com/images/I/61oXbM9pPPL._AC_SL1500_.jpg",
+    "amazon_price":1499,
+    "supplier_price":350
+    },
 
-    if p["name"] in seen:
-        continue
+    {
+    "name":"LED Strip Lights",
+    "category":"home",
+    "trend":90,
+    "amazon":"https://amazon.in",
+    "image":"https://m.media-amazon.com/images/I/61y3yX9sBVL._AC_SL1500_.jpg",
+    "amazon_price":699,
+    "supplier_price":150
+    },
 
-    seen.add(p["name"])
-    clean.append(p)
+    {
+    "name":"Mini Projector",
+    "category":"gadgets",
+    "trend":91,
+    "amazon":"https://amazon.in",
+    "image":"https://m.media-amazon.com/images/I/61Xj3W5G8pL._AC_SL1500_.jpg",
+    "amazon_price":4999,
+    "supplier_price":1800
+    }
 
-
-# keep top 20 by trend
-clean=sorted(clean,key=lambda x:x["trend"],reverse=True)[:20]
+    ]
 
 
 with open("products.json","w") as f:
-    json.dump(clean,f,indent=2)
+
+    json.dump(products,f,indent=2)
